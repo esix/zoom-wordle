@@ -777,6 +777,8 @@ FodyWeavers.xsd
 
 pkg/
 src/
+!client/src/
+!client/src/**
 
 ### AppEngine template
 # Google App Engine generated folder

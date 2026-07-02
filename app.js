@@ -11,8 +11,9 @@ import { fileURLToPath, URL } from 'url';
 import { start } from './server/server.js';
 import indexRoutes from './server/routes/index.js';
 import authRoutes from './server/routes/auth.js';
+import wordleRoutes from './server/routes/wordle.js';
 
-import { appName, port, redirectUri } from './config.js';
+import { appName, port, publicBasePath, redirectUri } from './config.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
@@ -83,10 +84,20 @@ app.use(logger('dev', { stream: { write: (msg) => dbg(msg) } }));
 
 // serve our app folder
 app.use(express.static(staticDir));
+if (publicBasePath) app.use(publicBasePath, express.static(staticDir));
 
 /* Routing */
 app.use('/', indexRoutes);
 app.use('/auth', authRoutes);
+app.use('/api/wordle', wordleRoutes);
+
+if (publicBasePath) {
+    app.use(publicBasePath, indexRoutes);
+    app.use(`${publicBasePath}/auth`, authRoutes);
+    app.use(`${publicBasePath}/api/wordle`, wordleRoutes);
+    app.get(`${publicBasePath}/*`, (req, res) => res.sendFile(indexHtml));
+}
+
 app.get('*', (req, res) => res.sendFile(indexHtml));
 
 // eslint-disable-next-line no-unused-vars

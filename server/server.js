@@ -2,73 +2,64 @@ import { createServer } from 'http';
 import { Server } from 'socket.io';
 import debug from 'debug';
 import { appName } from '../config.js';
+import {
+    getWordleState,
+    normalizeRoomId,
+    resetWordleGame,
+    submitWordleGuess,
+} from './wordle.js';
 
 const dbg = debug(`${appName}:http`);
-const dbgWS = debug(`${appName}:socket-io`);
-
-// we'll store rooms in a map for the sample - you could also use MongoDB
-const rooms = new Map();
-
-function err(socket, code, message) {
-    dbgWS('error', `[${code}] ${message}`);
-    socket.emit('error', {
-        code,
-        message,
-    });
-}
-
-function checkUUID(socket, uuid) {
-    const isUUID = uuid && typeof uuid === 'string';
-
-    if (!isUUID) err(socket, 400, 'Meeting UUID cannot be blank');
-
-    return isUUID;
-}
 
 function onConnection(io) {
     return (socket) => {
         let room;
 
-        socket.on('join', ({ meetingUUID }) => {
-            if (!checkUUID(socket, meetingUUID)) return;
+        function useRoom(meetingUUID) {
+            const nextRoom = normalizeRoomId(meetingUUID);
 
-            if (!room) {
-                room = meetingUUID;
-                socket.join(room);
-            }
+            if (room && room !== nextRoom) socket.leave(room);
 
-            if (rooms.has(room))
-                io.to(socket.id).emit('update', rooms.get(room));
+            room = nextRoom;
+            socket.join(room);
+
+            return room;
+        }
+
+        function joinRoom(meetingUUID) {
+            const activeRoom = useRoom(meetingUUID);
+
+            socket.emit('wordle:state', getWordleState(activeRoom));
+
+            return activeRoom;
+        }
+
+        socket.on('wordle:join', ({ meetingUUID } = {}) => {
+            joinRoom(meetingUUID);
         });
 
-        socket.on(
-            'sendUpdate',
-            ({ participants, topic, color, meetingUUID }) => {
-                if (!checkUUID(socket, meetingUUID)) return;
+        socket.on('wordle:guess', ({ meetingUUID, player, word } = {}) => {
+            const activeRoom = useRoom(meetingUUID || room);
+            const result = submitWordleGuess({
+                player,
+                room: activeRoom,
+                word,
+            });
 
-                if (!room) {
-                    room = meetingUUID;
-                    socket.join(room);
-                }
-
-                const data = rooms.has(room) ? rooms.get(room) : {};
-
-                const changes = {
-                    topic: topic && data.topic !== topic,
-                    participants: participants && data.participants !== topic,
-                    color: color && data.color !== color,
-                };
-
-                if (changes.topic) data.topic = topic;
-
-                if (changes.participants) data.participants = participants;
-
-                if (changes.color) data.color = color;
-
-                rooms.set(room, data);
-                socket.to(room).emit('update', data);
+            if (result.error) {
+                socket.emit('wordle:error', { message: result.error });
+                return;
             }
-        );
+
+            io.to(activeRoom).emit('wordle:state', result.state);
+        });
+
+        socket.on('wordle:reset', ({ meetingUUID } = {}) => {
+            const activeRoom = useRoom(meetingUUID || room);
+            const state = resetWordleGame(activeRoom);
+
+            io.to(activeRoom).emit('wordle:state', state);
+        });
     };
 }
 
@@ -76,12 +67,14 @@ function onConnection(io) {
  * Initialize the socket.io websocket handler
  * @param {Server} server HTTP Server
  */
-function startWS(server) {
+function startWS(server, app) {
     const io = new Server(server, {
         transports: ['websocket'],
         maxHttpBufferSize: 1e8,
         pingTimeout: 60000,
     });
+
+    app.set('io', io);
 
     io.on('connection', onConnection(io));
 }
@@ -94,7 +87,7 @@ function startWS(server) {
 export async function start(app, port) {
     // Create HTTP server
     const server = createServer(app);
-    startWS(server);
+    startWS(server, app);
 
     // let the user know when we're serving
     server.on('listening', () => {
