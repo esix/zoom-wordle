@@ -7,6 +7,9 @@ through the `meeting.chat_message_sent` event.
 
 - App name: `Wordle`
 - App type: Zoom App / General OAuth app, user-managed
+- Marketplace app URL:
+  `https://marketplace.zoom.us/apps/dHEusRXgTW2m5g6QMjjCZw`
+- App status: Development
 - Public app URL: `https://if-quests.ru/wordle/`
 - OAuth redirect URL: `https://if-quests.ru/wordle/auth`
 - Webhook URL: `https://if-quests.ru/wordle/webhooks/zoom`
