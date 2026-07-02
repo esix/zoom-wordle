@@ -49,28 +49,29 @@ function getApiBasePath() {
 function cleanGuessInput(value) {
     return value
         .normalize('NFKC')
-        .toUpperCase()
-        .replace(/[^A-Z]/g, '')
+        .toLocaleUpperCase('ru-RU')
+        .replace(/Ё/g, 'Е')
+        .replace(/[^А-Я]/g, '')
         .slice(0, 5);
 }
 
 function getGameLine(game) {
     if (game.status === 'solved') {
-        const winner = game.guesses.at(-1)?.player || 'Team';
+        const winner = game.guesses.at(-1)?.player || 'Команда';
 
-        return `${winner} solved ${game.guesses.at(-1)?.word || 'it'}`;
+        return `${winner}: ${game.guesses.at(-1)?.word || 'угадано'}`;
     }
 
-    if (game.status === 'failed') return `Answer: ${game.answer}`;
+    if (game.status === 'failed') return `Ответ: ${game.answer}`;
 
-    return `${game.remainingGuesses} guesses left`;
+    return `Осталось попыток: ${game.remainingGuesses}`;
 }
 
 function useZoomIdentity() {
     const [identity, setIdentity] = useState({
         meetingUUID: null,
-        player: 'Host',
-        status: 'Starting Zoom SDK...',
+        player: 'Ведущий',
+        status: 'Запускаю Zoom SDK...',
         zoomReady: false,
     });
 
@@ -96,8 +97,8 @@ function useZoomIdentity() {
                     player:
                         user.status === 'fulfilled' && user.value?.screenName
                             ? user.value.screenName
-                            : 'Host',
-                    status: 'Zoom SDK connected.',
+                            : 'Ведущий',
+                    status: 'Zoom SDK подключен.',
                     zoomReady: true,
                 });
             } catch (error) {
@@ -106,8 +107,8 @@ function useZoomIdentity() {
 
                 setIdentity({
                     meetingUUID: 'local',
-                    player: 'Host',
-                    status: `Zoom SDK unavailable: ${error.message || error}`,
+                    player: 'Ведущий',
+                    status: `Zoom SDK недоступен: ${error.message || error}`,
                     zoomReady: false,
                 });
             }
@@ -125,7 +126,7 @@ function useZoomIdentity() {
 
 function useWordleSocket(meetingUUID) {
     const [connectionStatus, setConnectionStatus] = useState(
-        'Connecting game server...'
+        'Подключаю игровой сервер...'
     );
     const [error, setError] = useState('');
     const [game, setGame] = useState(emptyGame);
@@ -142,16 +143,18 @@ function useWordleSocket(meetingUUID) {
         socketRef.current = socket;
 
         socket.on('connect', () => {
-            setConnectionStatus('Game server connected.');
+            setConnectionStatus('Игровой сервер подключен.');
             socket.emit('wordle:join', { meetingUUID });
         });
 
         socket.on('disconnect', () => {
-            setConnectionStatus('Game server disconnected.');
+            setConnectionStatus('Игровой сервер отключен.');
         });
 
         socket.on('connect_error', (nextError) => {
-            setConnectionStatus(`Game server error: ${nextError.message}`);
+            setConnectionStatus(
+                `Ошибка игрового сервера: ${nextError.message}`
+            );
         });
 
         socket.on('wordle:state', (nextGame) => {
@@ -160,7 +163,7 @@ function useWordleSocket(meetingUUID) {
         });
 
         socket.on('wordle:error', ({ message } = {}) => {
-            setError(message || 'Guess rejected.');
+            setError(message || 'Слово отклонено.');
         });
 
         return () => {
@@ -179,7 +182,7 @@ function useWordleSocket(meetingUUID) {
         });
         const data = await response.json();
 
-        if (!response.ok) throw new Error(data.error || 'Request failed.');
+        if (!response.ok) throw new Error(data.error || 'Запрос не удался.');
 
         if (data.state) setGame(data.state);
 
@@ -232,7 +235,7 @@ function useWordleSocket(meetingUUID) {
 }
 
 function useWordleForeground(game, enabled) {
-    const [status, setStatus] = useState('Video overlay waiting for Zoom...');
+    const [status, setStatus] = useState('Видео ждет Zoom...');
     const canvasRef = useRef(null);
     const gameRef = useRef(game);
     const tickRef = useRef(0);
@@ -244,7 +247,7 @@ function useWordleForeground(game, enabled) {
 
     useEffect(() => {
         if (!enabled) {
-            setStatus('Video overlay is idle outside Zoom.');
+            setStatus('Видео-слой не активен вне Zoom.');
             return undefined;
         }
 
@@ -274,13 +277,12 @@ function useWordleForeground(game, enabled) {
                     persistence: 'meeting',
                 });
 
-                if (!cancelled)
-                    setStatus('Wordle board is live on your video.');
+                if (!cancelled) setStatus('Доска Wordle уже в твоем видео.');
             } catch (error) {
                 console.error(error);
                 if (!cancelled) {
                     setStatus(
-                        `Virtual foreground failed: ${error.message || error}`
+                        `Видео-слой не обновился: ${error.message || error}`
                     );
                 }
                 window.clearInterval(timerRef.current);
@@ -304,7 +306,7 @@ function Board({ game }) {
     const rows = Array.from({ length: game.maxGuesses || 6 });
 
     return (
-        <div className="board" aria-label="Wordle board">
+        <div className="board" aria-label="Доска Wordle">
             {rows.map((_, rowIndex) => {
                 const guess = game.guesses[rowIndex];
                 const isActive =
@@ -348,10 +350,10 @@ function App() {
                 <header className="panel-header">
                     <div>
                         <p className="eyebrow">Zoom Wordle</p>
-                        <h1>Wordle</h1>
+                        <h1>5 букв</h1>
                     </div>
                     <span className={`round-pill ${game.status}`}>
-                        Round {game.round}
+                        Раунд {game.round}
                     </span>
                 </header>
 
@@ -361,13 +363,13 @@ function App() {
 
                 <form className="controls" onSubmit={handleSubmit}>
                     <input
-                        aria-label="Guess"
+                        aria-label="Слово"
                         disabled={game.status !== 'playing'}
                         maxLength="5"
                         onChange={(event) =>
                             setGuess(cleanGuessInput(event.target.value))
                         }
-                        placeholder="GUESS"
+                        placeholder="СЛОВО"
                         value={guess}
                     />
                     <button
@@ -376,10 +378,10 @@ function App() {
                         }
                         type="submit"
                     >
-                        Send
+                        Ок
                     </button>
                     <button onClick={resetGame} type="button">
-                        Reset
+                        Сброс
                     </button>
                 </form>
 

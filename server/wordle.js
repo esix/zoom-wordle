@@ -1,28 +1,20 @@
+import { readFileSync } from 'fs';
+import { dirname, resolve } from 'path';
+import { fileURLToPath } from 'url';
+
 const WORD_LENGTH = 5;
 const MAX_GUESSES = 6;
+const __dirname = dirname(fileURLToPath(import.meta.url));
 
-const ANSWERS = [
-    'ABOUT',
-    'BRAIN',
-    'CHAIR',
-    'CRANE',
-    'DREAM',
-    'EARTH',
-    'FRAME',
-    'GRACE',
-    'HEART',
-    'LIGHT',
-    'MOUSE',
-    'PLANT',
-    'REACT',
-    'SHARE',
-    'SMILE',
-    'SOUND',
-    'STONE',
-    'TABLE',
-    'VIDEO',
-    'WORLD',
-];
+function loadWords(fileName) {
+    const path = resolve(__dirname, '../data/wordlists', fileName);
+    const words = JSON.parse(readFileSync(path, 'utf8'));
+
+    return words.map((word) => word.toLocaleUpperCase('ru-RU'));
+}
+
+const ANSWERS = loadWords('ru-answers.json');
+const ACCEPTED_GUESSES = new Set(loadWords('ru-guesses.json'));
 
 const rooms = new Map();
 
@@ -126,16 +118,19 @@ function cleanPlayer(player) {
 export function extractGuess(value) {
     const text = String(value || '')
         .normalize('NFKC')
-        .toUpperCase();
-    const token = text.match(/\b[A-Z]{5}\b/);
+        .toLocaleLowerCase('ru-RU')
+        .replaceAll('ё', 'е');
+    const token = text.match(/(^|[^а-я])([а-я]{5})(?=[^а-я]|$)/);
 
-    if (token) return token[0];
+    if (token) return token[2].toLocaleUpperCase('ru-RU');
 
     const letters = Array.from(text)
-        .filter((char) => /^[A-Z]$/.test(char))
+        .filter((char) => /^[а-я]$/.test(char))
         .join('');
 
-    return letters.length === WORD_LENGTH ? letters : '';
+    return letters.length === WORD_LENGTH
+        ? letters.toLocaleUpperCase('ru-RU')
+        : '';
 }
 
 export function getWordleState(room) {
@@ -158,21 +153,28 @@ export function submitWordleGuess({ room, word, player }) {
 
     if (!guess) {
         return {
-            error: 'Only five-letter English words are accepted right now.',
+            error: 'Нужно русское слово из пяти букв.',
+            state: serializeGame(game),
+        };
+    }
+
+    if (!ACCEPTED_GUESSES.has(guess)) {
+        return {
+            error: `${guess} нет в словаре.`,
             state: serializeGame(game),
         };
     }
 
     if (game.status !== 'playing') {
         return {
-            error: 'This round is already finished.',
+            error: 'Раунд уже закончен.',
             state: serializeGame(game),
         };
     }
 
     if (game.guesses.some((row) => row.word === guess)) {
         return {
-            error: `${guess} was already guessed.`,
+            error: `${guess} уже было.`,
             state: serializeGame(game),
         };
     }

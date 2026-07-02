@@ -9,6 +9,7 @@
     "start": "node app.js",
     "dev": "node scripts/dev.js",
     "build": "vite build",
+    "build:ru-wordlists": "node scripts/build-ru-wordlists.mjs",
     "prepare": "npx husky install",
     "postprepare": "node scripts/gen-secrets.cjs"
   },

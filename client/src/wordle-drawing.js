@@ -20,20 +20,20 @@ function drawRoundedRect(ctx, x, y, width, height, radius) {
 
 function getTitle(game) {
     if (game.status === 'solved') {
-        const winner = game.guesses.at(-1)?.player || 'Team';
+        const winner = game.guesses.at(-1)?.player || 'Команда';
 
-        return `${winner} solved it`;
+        return `${winner} угадал`;
     }
 
-    if (game.status === 'failed') return `Word was ${game.answer}`;
+    if (game.status === 'failed') return `Ответ: ${game.answer}`;
 
-    return 'WORDLE';
+    return '5 БУКВ';
 }
 
 function getSubtitle(game) {
     const latest = game.guesses.at(-1);
 
-    if (!latest) return 'Waiting for guesses';
+    if (!latest) return 'Ждем слова';
 
     return `${latest.player}: ${latest.word}`;
 }
