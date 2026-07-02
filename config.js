@@ -39,6 +39,7 @@ export const zoomApp = {
     clientSecret: config.ZM_CLIENT_SECRET,
     redirectUrl: config.ZM_REDIRECT_URL,
     sessionSecret: config.SESSION_SECRET,
+    webhookSecretToken: config.ZOOM_WEBHOOK_SECRET_TOKEN || '',
 };
 
 function normalizeBasePath(path) {

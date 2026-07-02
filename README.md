@@ -1,234 +1,78 @@
+# Zoom Wordle
 
-## Включить инструментиы разработчика
+A Zoom App prototype that renders a Russian Wordle board into the user's
+virtual foreground video. The intended game flow is:
 
-```
-defaults write ZoomChat webview.context.menu true
-```
+1. The host starts the Zoom App in a meeting.
+2. Participants send five-letter Russian words to the public in-meeting chat.
+3. Zoom sends `meeting.chat_message_sent` events to the app webhook.
+4. The app validates each message against a Russian word list and updates the
+   video overlay for the meeting.
 
+## Current Status
 
-## Запуск
+The app UI, OAuth install flow, Wordle game loop, Russian word validation, and
+webhook endpoint are implemented.
 
-```
-npm start
-ssh -N -o ExitOnForwardFailure=yes -R 127.0.0.1:18080:localhost:8000 if-quests.ru
-```
+The remaining blocker is Zoom-side delivery of the `meeting.chat_message_sent`
+webhook. The event subscription is active and points to the app endpoint, but
+Zoom does not currently attempt webhook delivery when public in-meeting chat
+messages are sent.
 
-Публичный URL для Zoom:
+See [docs/zoom-support.md](docs/zoom-support.md) for the support note and
+reproduction details.
 
-```
-https://if-quests.ru/wordle/
-```
-
-
-
-
-
-# Zoom App Custom Layout Sample
-
-This Zoom App sample uses Node.js + Express to demonstrate how you can use the Zoom Layers API to create an Immersive
-Zoom App that captivates your audience and presenters alike with a custom layout.
-
-## Prerequisites
-
-1. [Node JS](https://nodejs.org/en/)
-2. [Ngrok](https://ngrok.com/docs/getting-started)
-3. [Zoom Account](https://support.zoom.us/hc/en-us/articles/207278726-Plan-Types-)
-4. [Zoom App Credentials](#config:-app-credentials) (Instructions below)
-    1. Client ID
-    2. Client Secret
-    3. Redirect URI
-
-## Getting started
-
-Open your terminal:
+## Local Setup
 
 ```bash
-# Clone down this repository
-git clone git@github.com/zoom/zoomapps-customlayout-js
-
-# navigate into the cloned project directory
-cd zoomapps-customlayout-js
-
-# run NPM to install the app dependencies
 npm install
-
-# initialize your ngrok session
-ngrok http 3000
+cp .env.sample .env
+npm start
 ```
 
-### Create your Zoom App
-
-In your web browser, navigate to [Zoom Developer Portal](https://developers.zoom.us/) and register/log into your
-developer account.
-
-Click the "Build App" button at the top and choose to "Zoom Apps" application.
-
-1. Name your app
-2. Choose whether to list your app on the marketplace or not
-3. Click "Create"
-
-For more information, you can follow [this guide](https://dev.to/zoom/introducing-zoom-apps-33he)
-check out [this video series](https://www.youtube.com/playlist?list=PLKpRxBfeD1kGN-0QgQ6XtSwtxI3GQM16R) on how to create and configure these sample Zoom Apps.
-
-### Config: App Credentials
-
-In your terminal where you launched `ngrok`, find the `Forwarding` value and copy/paste that into the "Home URL" and "
-Redirect URL for OAuth" fields.
-
-```
-Home URL:               https://xxxxx.ngrok.io
-Redirect URL for OAuth: https://xxxxx.ngrok.io/auth
-```
-
-> NOTE: ngrok URLs under ngrok's Free plan are ephemeral, meaning they will only live for up to a couple hours at most, and will change every time you reinitialize the application. This will require you to update these fields every time you restart your ngrok service.
-
-#### OAuth allow list
-
-- `https://example.ngrok.io`
-
-#### Domain allow list
-
-- `appssdk.zoom.us`
-- `ngrok.io`
-
-### Config: Information
-
-The following information is required to activate your application:
-
-- Basic Information
-    - App name
-    - Short description
-    - Long description (entering a short message here is fine for now)
-- Developer Contact Information
-    - Name
-    - Email address
-
-> NOTE: if you intend to publish your application on the Zoom Apps Marketplace, more information will be required in this section before submitting.
-
-### Config: App Features
-
-Under the Zoom App SDK section, click the `+ Add APIs` button and enable the following options from their respective
-sections:
-
-#### APIs
-
-- clearImage,
-- clearParticipant,
-- closeRenderingContext
-- connect
-- rawImage
-- drawParticipant
-- getMeetingParticipants
-- getMeetingUUID
-- getRunningContext
-- getUserContext
-- postMessage
-- runRenderingContext
-- sendAppInvitationToAllParticipants
-
-#### Events
-
-- onConnect
-- onMeeting
-- onMessage
-- onMyMediaChange
-- onParticipantChange
-
-### Scopes
-
-Ensure that the following scope is selected on the Scopes tab:
-- `zoomapp:inmeeting`
-
-### Config `.env`
-
-When building for Development, open the `.env` file in your text editor and enter the following information from the App Credentials section you just
-configured:
+Required environment variables:
 
 ```ini
-# Client ID for your Zoom App
-ZM_CLIENT_ID=[app_client_id]
-
-# Client Secret for your Zoom app
-ZM_CLIENT_SECRET=[app_client_secret]
-
-# Redirect URI set for your app in the Zoom Marketplace
-ZM_REDIRECT_URL=https://[xxxx-xx-xx-xxx-x].ngrok.io/auth
+ZM_CLIENT_ID=
+ZM_CLIENT_SECRET=
+ZM_REDIRECT_URL=
+PUBLIC_BASE_PATH=/wordle
+SESSION_SECRET=
+ZOOM_WEBHOOK_SECRET_TOKEN=
 ```
 
-#### Zoom for Government
+`ZOOM_WEBHOOK_SECRET_TOKEN` is the Secret Token from Zoom Event Subscriptions.
+It is used to validate Zoom webhook URL validation requests and signed webhook
+events.
 
-If you are a [Zoom for Government (ZfG)](https://www.zoomgov.com/) customer you can use the `ZM_HOST` variable to change
-the base URL used for Zoom. This will allow you to adjust to the different Marketplace and API Base URLs used by ZfG
-customers.
+## Public URL Used For Testing
 
-**Marketplace URL:** marketplace.*zoomgov.com*
-
-**API Base URL:** api.*zoomgov.com*
-
-## Start the App
-
-### Development
-
-Run the `dev` npm script to start in development mode using a Docker container.
-
-```shell
-npm run dev
+```text
+https://if-quests.ru/wordle/
+https://if-quests.ru/wordle/auth
+https://if-quests.ru/wordle/webhooks/zoom
 ```
 
-The `dev` script will:
+The local development server runs on port `8000` and is exposed through a
+reverse SSH tunnel plus nginx.
 
-1. Watch JS files and built to the dist/ folder
-1. Watch Server files and build to the dist/ folder
-1. Start the application
+## Useful Commands
 
-### Production
+```bash
+npm run build
+npx eslint app.js config.js server/**/*.js client/src/**/*.js
+```
 
-When running your application in production no logs are sent to the console by default and the server is not restarted
-on file changes.
+## Word Lists
 
-We use the `NODE_ENV` environment variable here to tell the application to start in prodcution mode.
+Russian word lists are generated into `data/wordlists/` from open datasets:
 
-```shell
-# Mac/Linux
-NODE_ENV=production npm start
+- `danakt/russian-words` (MIT)
+- `Harrix/Russian-Nouns` (MIT)
+- `Digital-Pushkin-Lab/Russian-Word-Frequency-Lists-for-Children` (CC0)
 
-# Windows
-set NODE_ENV=production && npm start
-````
+Regenerate them with:
 
-## Usage
-
-To install the Zoom App, Navigate to the **Home URL** that you set in your browser and click the link to install.
-
-After you authorize the app, Zoom will automatically open the app within the client.
-
-### Keeping secrets secret
-
-This application makes use of your Zoom App Client ID and Client Secret as well as a custom secret for signing session
-cookies. During development, the application will read from the .env file. ;
-
-In order to align with security best practices, this application does not read from the .env file in production mode.
-
-This means you'll want to set environment variables on the hosting platform that you'
-re using instead of within the .env file. This might include using a secret manager or a CI/CD pipeline.
-
-> :warning: **Never commit your .env file to version control:** The file likely contains Zoom App Credentials and Session Secrets
-
-### Code Style
-
-This project uses [prettier](https://prettier.io/) and [eslint](https://eslint.org/) to enforce style and protect
-against coding errors along with a pre-commit git hook(s) via [husky](https://typicode.github.io/husky/#/) to ensure
-files pass checks prior to commit.
-
-### Testing
-
-At this time there are no e2e or unit tests.
-
-## Need help?
-
-If you're looking for help, try [Developer Support](https://devsupport.zoom.us) or
-our [Developer Forum](https://devforum.zoom.us). Priority support is also available
-with [Premier Developer Support](https://zoom.us/docs/en-us/developer-support-plans.html) plans.
-
-### Documentation
-Make sure to review [our documentation](https://marketplace.zoom.us/docs/zoom-apps/introduction/) as a reference when building your Zoom Apps.
+```bash
+npm run build:ru-wordlists
+```

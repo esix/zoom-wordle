@@ -12,6 +12,7 @@ import { start } from './server/server.js';
 import indexRoutes from './server/routes/index.js';
 import authRoutes from './server/routes/auth.js';
 import wordleRoutes from './server/routes/wordle.js';
+import zoomWebhookRoutes from './server/routes/zoom-webhooks.js';
 
 import { appName, port, publicBasePath, redirectUri } from './config.js';
 
@@ -76,7 +77,13 @@ const headers = {
 
 app.use(helmet(headers));
 
-app.use(express.json());
+app.use(
+    express.json({
+        verify: (req, res, buf) => {
+            req.rawBody = buf.toString('utf8');
+        },
+    })
+);
 app.use(compression());
 app.use(cookieParser());
 app.use(express.urlencoded({ extended: false }));
@@ -90,11 +97,13 @@ if (publicBasePath) app.use(publicBasePath, express.static(staticDir));
 app.use('/', indexRoutes);
 app.use('/auth', authRoutes);
 app.use('/api/wordle', wordleRoutes);
+app.use('/webhooks/zoom', zoomWebhookRoutes);
 
 if (publicBasePath) {
     app.use(publicBasePath, indexRoutes);
     app.use(`${publicBasePath}/auth`, authRoutes);
     app.use(`${publicBasePath}/api/wordle`, wordleRoutes);
+    app.use(`${publicBasePath}/webhooks/zoom`, zoomWebhookRoutes);
     app.get(`${publicBasePath}/*`, (req, res) => res.sendFile(indexHtml));
 }
 

@@ -70,8 +70,8 @@ function apiRequest(method, endpoint, token, data = null) {
  * @return {{verifier: string, state: string, url: module:url.URL}}
  */
 export function getInstallURL() {
-    const state = rand('base64');
-    const verifier = rand('ascii');
+    const state = base64URL(rand('base64'));
+    const verifier = base64URL(rand('base64'));
 
     const digest = crypto
         .createHash('sha256')
@@ -103,15 +103,18 @@ export async function getToken(code, verifier) {
     if (!code || typeof code !== 'string')
         throw createError(500, 'authorization code must be a valid string');
 
-    if (!verifier || typeof verifier !== 'string')
+    if (verifier && typeof verifier !== 'string')
         throw createError(500, 'code verifier code must be a valid string');
 
-    return tokenRequest({
+    const params = {
         code,
-        code_verifier: verifier,
         redirect_uri: zoomApp.redirectUrl,
         grant_type: 'authorization_code',
-    });
+    };
+
+    if (verifier) params.code_verifier = verifier;
+
+    return tokenRequest(params);
 }
 
 /**

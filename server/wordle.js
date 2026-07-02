@@ -133,6 +133,16 @@ export function extractGuess(value) {
         : '';
 }
 
+export function extractExactGuess(value) {
+    const text = String(value || '')
+        .normalize('NFKC')
+        .trim()
+        .toLocaleLowerCase('ru-RU')
+        .replaceAll('ё', 'е');
+
+    return /^[а-я]{5}$/.test(text) ? text.toLocaleUpperCase('ru-RU') : '';
+}
+
 export function getWordleState(room) {
     return serializeGame(getGame(room));
 }

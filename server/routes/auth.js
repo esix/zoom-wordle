@@ -19,12 +19,16 @@ const validateQuery = [
         .isLength({ min: codeMin, max: codeMax })
         .withMessage(`code must be > ${codeMin} and < ${codeMax} chars`)
         .escape(),
-    query('state')
-        .isString()
-        .withMessage('state must be a string')
-        .custom((value, { req }) => value === req.session.state)
-        .withMessage('invalid state parameter')
-        .escape(),
+    query('state').custom((value, { req }) => {
+        const expectedState = req.session.state;
+
+        if (!expectedState && value === undefined) return true;
+        if (typeof value !== 'string')
+            throw new Error('state must be a string');
+        if (value !== expectedState) throw new Error('invalid state parameter');
+
+        return true;
+    }),
 ];
 
 /*
