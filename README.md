@@ -1,3 +1,28 @@
+
+## Включить инструментиы разработчика
+
+```
+defaults write ZoomChat webview.context.menu true
+```
+
+
+## Запуск
+
+```
+npm start
+ssh -N -o ExitOnForwardFailure=yes -R 127.0.0.1:18080:localhost:8000 if-quests.ru
+```
+
+Публичный URL для Zoom:
+
+```
+https://if-quests.ru/wordle/
+```
+
+
+
+
+
 # Zoom App Custom Layout Sample
 
 This Zoom App sample uses Node.js + Express to demonstrate how you can use the Zoom Layers API to create an Immersive

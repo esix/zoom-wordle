@@ -1,6 +1,6 @@
 import axios from 'axios';
 import { URL } from 'url';
-import { zoomApp } from '../../config.js';
+import { publicBasePath, zoomApp } from '../../config.js';
 import createError from 'http-errors';
 import crypto from 'crypto';
 
@@ -146,7 +146,7 @@ export function getZoomUser(uid, token) {
 export function getDeeplink(token) {
     return apiRequest('POST', '/zoomapp/deeplink', token, {
         action: JSON.stringify({
-            url: '/',
+            url: publicBasePath ? `${publicBasePath}/` : '/',
             role_name: 'Owner',
             verified: 1,
             role_id: 0,

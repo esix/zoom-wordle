@@ -7,12 +7,12 @@ html(lang="en")
             meta(http-equiv='X-UA-Compatible', content='IE=edge')
             meta(name='description', content='Some description')
             meta(name='viewport', content='width=device-width, initial-scale=1')
+            meta(name='app-base-path', content=basePath)
         block styles
-            link(rel='stylesheet', href='/css/style.css')
+            link(rel='stylesheet', href=assetPath('/css/style.css'))
     body
         section.section
             .container
                 block content
         block scripts
         noscript Javascript must be enabled to use this application
-

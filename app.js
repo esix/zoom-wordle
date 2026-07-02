@@ -12,7 +12,7 @@ import { start } from './server/server.js';
 import indexRoutes from './server/routes/index.js';
 import authRoutes from './server/routes/auth.js';
 
-import { appName, port, redirectUri } from './config.js';
+import { appName, port, publicBasePath, redirectUri } from './config.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
@@ -29,6 +29,11 @@ const viewDir = `${__dirname}/server/views`;
 app.set('view engine', 'pug');
 app.set('views', viewDir);
 app.locals.basedir = staticDir;
+app.locals.basePath = publicBasePath;
+app.locals.assetPath = (path = '/') => {
+    const normalized = path.startsWith('/') ? path : `/${path}`;
+    return `${publicBasePath}${normalized}` || '/';
+};
 
 // HTTP
 app.set('port', port);

@@ -41,9 +41,18 @@ export const zoomApp = {
     sessionSecret: config.SESSION_SECRET,
 };
 
+function normalizeBasePath(path) {
+    if (!path || path === '/') return '';
+
+    const withLeadingSlash = path.startsWith('/') ? path : `/${path}`;
+
+    return withLeadingSlash.replace(/\/+$/, '');
+}
+
 // Zoom App Info
 export const appName = config.APP_NAME || 'zoom-app';
 export const redirectUri = zoomApp.redirectUrl;
+export const publicBasePath = normalizeBasePath(config.PUBLIC_BASE_PATH);
 
 // HTTP
 export const port = config.PORT || '3000';
@@ -51,6 +60,7 @@ export const port = config.PORT || '3000';
 // require secrets are explicitly imported
 export default {
     appName,
+    publicBasePath,
     redirectUri,
     port,
 };

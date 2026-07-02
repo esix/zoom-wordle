@@ -10,18 +10,6 @@ body::-webkit-scrollbar {
     display: none;
 }
 
-#logo {
-    display: none;
-}
-
-#uiCanvas {
-    position:fixed;
-    left:0;
-    top:0;
-    width:0;
-    height:0;
-}
-
 #topicInp {
     border-top-right-radius: 0;
     border-bottom-right-radius: 0;
@@ -44,3 +32,7 @@ button.button.is-primary:hover {
     background: #0E72Ed;
 }
 
+#status {
+    color: #4a5568;
+    font-size: 0.95rem;
+}

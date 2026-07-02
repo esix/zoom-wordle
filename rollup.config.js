@@ -21,7 +21,7 @@ const plugins = [
         browser: true,
     }),
     commonjs(),
-    del({ targets: `${dest}}/*` }),
+    del({ targets: `${dest}/*`, runOnce: true }),
     copy({
         targets: [
             {

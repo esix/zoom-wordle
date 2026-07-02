@@ -163,6 +163,16 @@ function loadImage(src) {
     });
 }
 
+function assetPath(path) {
+    const basePath =
+        document
+            .querySelector('meta[name="app-base-path"]')
+            ?.getAttribute('content') || '';
+    const normalized = path.startsWith('/') ? path : `/${path}`;
+
+    return `${basePath}${normalized}`;
+}
+
 /**
  * Draw the Zoom Logo on a context
  * @param {CanvasRenderingContext2D} ctx - canvas 2d context
@@ -173,7 +183,7 @@ function loadImage(src) {
  * @return {Promise<void>}
  */
 export async function drawLogo(ctx, x, y, width, height) {
-    const logo = await loadImage('/img/zoom.png');
+    const logo = await loadImage(assetPath('/img/zoom.png'));
 
     const hRatio = width / logo.width;
     const vRatio = height / logo.height;

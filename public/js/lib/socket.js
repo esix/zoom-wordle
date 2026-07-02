@@ -1,6 +1,12 @@
 import { io } from 'socket.io-client';
 
+const basePath =
+    document
+        .querySelector('meta[name="app-base-path"]')
+        ?.getAttribute('content') || '';
+
 const socket = io(window.location.origin, {
+    path: `${basePath}/socket.io`,
     transports: ['websocket', 'polling'],
 });
 

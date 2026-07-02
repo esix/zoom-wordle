@@ -117,6 +117,7 @@ class ImmersiveApp {
                 'postMessage',
                 'runRenderingContext',
                 'sendAppInvitationToAllParticipants',
+                'setVirtualForeground',
             ],
         });
         console.debug('Configuration', conf);
