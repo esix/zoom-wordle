@@ -8,9 +8,16 @@
     "eslint:recommended",
     "prettier"
   ],
+  "plugins": ["react"],
   "parserOptions": {
     "ecmaVersion": "latest",
+    "ecmaFeatures": {
+      "jsx": true
+    },
     "sourceType": "module"
+  },
+  "rules": {
+    "react/jsx-uses-vars": "error"
   },
   "ignorePatterns": ["**/vendor/*.js"]
 }

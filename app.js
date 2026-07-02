@@ -5,14 +5,14 @@ import cookieParser from 'cookie-parser';
 import debug from 'debug';
 import helmet from 'helmet';
 import logger from 'morgan';
-import { dirname } from 'path';
+import { dirname, join } from 'path';
 import { fileURLToPath, URL } from 'url';
 
 import { start } from './server/server.js';
 import indexRoutes from './server/routes/index.js';
 import authRoutes from './server/routes/auth.js';
 
-import { appName, port, publicBasePath, redirectUri } from './config.js';
+import { appName, port, redirectUri } from './config.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
@@ -24,16 +24,7 @@ const redirectHost = new URL(redirectUri).host;
 
 // views and assets
 const staticDir = `${__dirname}/dist`;
-const viewDir = `${__dirname}/server/views`;
-
-app.set('view engine', 'pug');
-app.set('views', viewDir);
-app.locals.basedir = staticDir;
-app.locals.basePath = publicBasePath;
-app.locals.assetPath = (path = '/') => {
-    const normalized = path.startsWith('/') ? path : `/${path}`;
-    return `${publicBasePath}${normalized}` || '/';
-};
+const indexHtml = join(staticDir, 'index.html');
 
 // HTTP
 app.set('port', port);
@@ -96,11 +87,12 @@ app.use(express.static(staticDir));
 /* Routing */
 app.use('/', indexRoutes);
 app.use('/auth', authRoutes);
+app.get('*', (req, res) => res.sendFile(indexHtml));
 
 // eslint-disable-next-line no-unused-vars
 app.use((err, req, res, next) => {
     const status = err.status || 500;
-    const title = `Error ${err.status}`;
+    const title = `Error ${status}`;
 
     // set locals, only providing error in development
     res.locals.message = err.message;
@@ -110,11 +102,8 @@ app.use((err, req, res, next) => {
 
     // render the error page
     res.status(status);
-    res.render('error');
+    res.type('text').send(`${title}: ${res.locals.message}`);
 });
-
-// redirect users to the home page if they get a 404 route
-app.get('*', (req, res) => res.redirect('/'));
 
 // start serving
 start(app, port).catch(async (e) => {
